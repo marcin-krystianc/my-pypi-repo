@@ -2,6 +2,16 @@ import os
 import glob
 import shutil
 from pathlib import Path
+from github import Github
+
+# Get token from environment variable
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("GITHUB_TOKEN environment variable is not set")
+
+# Initialize GitHub client
+g = Github(github_token)
+
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
