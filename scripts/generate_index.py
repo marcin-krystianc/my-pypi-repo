@@ -97,6 +97,7 @@ def main():
     # Get environment variables
     token = os.environ.get("GITHUB_TOKEN")
     repo = os.environ.get("GITHUB_REPOSITORY")
+    print (repo)
     output_dir = os.environ.get("OUTPUT_DIR", "dist")
     
     if not all([token, repo]):
