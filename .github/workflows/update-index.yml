@@ -7,7 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  publish_pypi_index:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !github.event.repository.fork
+    name: Publish release
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -18,7 +20,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-          
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ParquetSharp ${{ needs.build-nuget.outputs.version }}
+          draft: true
+          prerelease: ${{ contains(needs.build-nuget.outputs.version, '-') }}
+          files: |
+            packages/jollyjack/jollyjack-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            
       - name: Generate Package Index
         run: |
           python scripts/generate_index.py
