@@ -74,5 +74,26 @@ def generate_package_index():
             with open(package_dist_dir / "index.html", "w") as f:
                 f.write(package_index)
 
+def query_releases():
+    try:
+        repo = g.get_repo("marcin-krystianc/my-pypi-repo")
+        
+        # Get all releases
+        releases = repo.get_releases()
+
+        # Process release assets
+        for release in releases:
+            for asset in release.get_assets():
+                print({
+                    "name": asset.name,
+                    "size": asset.size,
+                    "download_count": asset.download_count,
+                    "download_url": asset.browser_download_url,
+                    "created_at": asset.created_at
+                })
+            
+    except Exception as e:
+        print(f"Error querying releases: {e}")
+
 if __name__ == "__main__":
-    generate_package_index()
+    query_releases()
