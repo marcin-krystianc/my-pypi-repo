@@ -65,7 +65,8 @@ class PackageIndexBuilder:
             file_links = []
             assets = sorted(assets, key=lambda x: x["filename"])
             for filename, items in itertools.groupby(assets, key=lambda x: x["filename"]):
-                file_links.append(next(items)['url'])
+                url = next(items)['url']
+                file_links.append(f'<a href="{url}">{filename}</a><br/>')
 
             package_index = HTML_TEMPLATE.format(
                 package_name=package,
