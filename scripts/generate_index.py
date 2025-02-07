@@ -106,4 +106,5 @@ def query_releases():
         print(f"Error querying releases: {e}")
 
 if __name__ == "__main__":
-    query_releases()
+    query_releases()    
+    generate_package_index()
