@@ -4,8 +4,19 @@ import logging
 from pathlib import Path
 from github import Github
 from typing import List, Dict
-import shutil
-import html
+import itertools
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+ <html>
+ <head>
+     <title>{package_name}</title>
+ </head>
+ <body>
+     <h1>{package_name}</h1>
+     {package_links}
+ </body>
+ </html>
+"""
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -19,17 +30,17 @@ class PackageIndexBuilder:
         self.packages: Dict[str, List[Dict]] = {}
 
     def collect_packages(self):
-        """Collect all wheel and tar.gz files from releases"""
+
         logger.info("Collecting packages from releases...")
         repo = self.github.get_repo(self.repo_name)
-        
+
         for release in repo.get_releases():
             for asset in release.get_assets():
                 if asset.name.endswith(('.whl', '.tar.gz')):
                     package_name = asset.name.split('-')[0]
                     if package_name not in self.packages:
                         self.packages[package_name] = []
-                    
+
                     self.packages[package_name].append({
                         'filename': asset.name,
                         'url': asset.browser_download_url,
@@ -38,57 +49,46 @@ class PackageIndexBuilder:
                     })
 
     def generate_index_html(self):
-        """Generate the main index.html file"""
-        logger.info("Generating index.html...")
-        
-        html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Python Package Index</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        .package { margin-bottom: 1em; padding: 1em; border: 1px solid #ddd; }
-        .package h2 { margin-top: 0; }
-        .file { margin-left: 2em; }
-    </style>
-</head>
-<body>
-    <h1>Python Package Index</h1>
-"""
+        # Generate main index
+        package_list = self.packages.keys()
+        main_index = HTML_TEMPLATE.format(
+            package_name="Simple Package Index",
+            package_links="\n".join(package_list)
+        )
 
-        for package_name, files in sorted(self.packages.items()):
-            html_content += f'<div class="package">\n'
-            html_content += f'    <h2>{html.escape(package_name)}</h2>\n'
-            
-            for file_info in files:
-                html_content += f'    <div class="file">\n'
-                html_content += f'        <a href="{file_info["url"]}">{html.escape(file_info["filename"])}</a>\n'
-                html_content += f'        ({file_info["size"]} bytes, uploaded {file_info["upload_time"]})\n'
-                html_content += f'    </div>\n'
-            
-            html_content += '</div>\n'
+        with open(self.output_dir / "index.html", "w") as f:
+            f.write(main_index)
+ 
+        for package, assets in self.packages.items():
 
-        html_content += """
-</body>
-</html>
-"""
+            # Generate package-specific index.html
+            file_links = []
+            assets = sorted(assets, key=lambda x: x["filename"])
+            for filename, items in itertools.groupby(assets, key=lambda x: x["filename"]):
+                file_links.append(next(items)['url'])
 
-        index_path = self.output_dir / 'index.html'
-        index_path.write_text(html_content)
+            package_index = HTML_TEMPLATE.format(
+                package_name=package,
+                package_links="\n".join(file_links)
+            )
+
+            package_dist_dir = self.output_dir / package
+            package_dist_dir.mkdir(exist_ok=True)
+            with open(package_dist_dir / "index.html", "w") as f:
+                f.write(package_index)
 
     def build(self):
         """Main build process"""
         try:
             # Create output directory
             self.output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Collect and generate
             self.collect_packages()
             self.generate_index_html()
-            
+
             logger.info(f"Package index built successfully in {self.output_dir}")
-            
+
         except Exception as e:
             logger.error(f"Error building package index: {e}")
             raise
@@ -103,7 +103,7 @@ def main():
     if not all([token, repo]):
         logger.error("Missing required environment variables")
         sys.exit(1)
-    
+
     try:
         builder = PackageIndexBuilder(token, repo, output_dir)
         builder.build()
