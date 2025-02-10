@@ -61,21 +61,30 @@ class PackageIndexBuilder:
  
         for package, assets in self.packages.items():
 
+            package_dir = self.output_dir / package
+            package_dir.mkdir(exist_ok=True)
+
             # Generate package-specific index.html
             file_links = []
             assets = sorted(assets, key=lambda x: x["filename"])
             for filename, items in itertools.groupby(assets, key=lambda x: x["filename"]):
+                file_links.append(f'<a href="../{filename}">{filename}</a><br/>')
                 url = next(items)['url']
-                file_links.append(f'<a href="{url}">{filename}</a><br/>')
+
+                # Download the file
+                with open(package_dir / filename, 'wb') as f:
+                    response = requests.get(url, stream=True)
+                    response.raise_for_status()
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
 
             package_index = HTML_TEMPLATE.format(
                 package_name=package,
                 package_links="\n".join(file_links)
             )
 
-            package_dist_dir = self.output_dir / package
-            package_dist_dir.mkdir(exist_ok=True)
-            with open(package_dist_dir / "index.html", "w") as f:
+            with open(package_dir / "index.html", "w") as f:
                 f.write(package_index)
 
     def build(self):
