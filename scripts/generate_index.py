@@ -29,6 +29,12 @@ class PackageIndexBuilder:
         self.repo_name = repo_name
         self.output_dir = Path(output_dir)
         self.packages: Dict[str, List[Dict]] = {}
+        
+        # Set up authenticated session
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"token {token}",
+        })
 
     def collect_packages(self):
 
@@ -74,7 +80,8 @@ class PackageIndexBuilder:
 
                 # Download the file
                 with open(package_dir / filename, 'wb') as f:
-                    response = requests.get(url, stream=True)
+                    logger.info(f"Downloading {url}")
+                    response = self.session.get(url, stream=True)
                     response.raise_for_status()
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
@@ -89,20 +96,15 @@ class PackageIndexBuilder:
                 f.write(package_index)
 
     def build(self):
-        """Main build process"""
-        try:
-            # Create output directory
-            self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Create output directory
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Collect and generate
-            self.collect_packages()
-            self.generate_index_html()
+        # Collect and generate
+        self.collect_packages()
+        self.generate_index_html()
 
-            logger.info(f"Package index built successfully in {self.output_dir}")
+        logger.info(f"Package index built successfully in {self.output_dir}")
 
-        except Exception as e:
-            logger.error(f"Error building package index: {e}")
-            raise
 
 def main():
     # Get environment variables
@@ -115,12 +117,8 @@ def main():
         logger.error("Missing required environment variables")
         sys.exit(1)
 
-    try:
-        builder = PackageIndexBuilder(token, repo, output_dir)
-        builder.build()
-    except Exception as e:
-        logger.error(f"Failed to build package index: {e}")
-        sys.exit(1)
+    builder = PackageIndexBuilder(token, repo, output_dir)
+    builder.build()
 
 if __name__ == "__main__":
     main()
