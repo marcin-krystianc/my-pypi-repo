@@ -32,7 +32,7 @@ class PackageIndexBuilder:
         
         # Set up authenticated session
         self.session = requests.Session()
-        self.headers.update({
+        self.session.headers.update({
             "Authorization": f"token {token}",
             "Accept": "application/octet-stream",
         })
