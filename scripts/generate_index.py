@@ -32,8 +32,9 @@ class PackageIndexBuilder:
         
         # Set up authenticated session
         self.session = requests.Session()
-        self.session.headers.update({
+        self.headers.update({
             "Authorization": f"token {token}",
+            "Accept": "application/octet-stream",
         })
 
     def collect_packages(self):
@@ -50,7 +51,7 @@ class PackageIndexBuilder:
 
                     self.packages[package_name].append({
                         'filename': asset.name,
-                        'url': asset.browser_download_url,
+                        'url': asset.url,
                         'size': asset.size,
                         'upload_time': asset.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     })
@@ -80,7 +81,7 @@ class PackageIndexBuilder:
 
                 # Download the file
                 with open(package_dir / filename, 'wb') as f:
-                    logger.info(f"Downloading {url}")
+                    logger.info(f"Downloading '{filename}' from '{url}'")
                     response = self.session.get(url, stream=True)
                     response.raise_for_status()
                     for chunk in response.iter_content(chunk_size=8192):
