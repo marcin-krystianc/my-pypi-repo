@@ -24,7 +24,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: jollyjack
-          prerelease: ${{ contains(needs.build-nuget.outputs.version, '-') }}
           files: |
             packages/jollyjack/jollyjack-*
         env:
