@@ -5,6 +5,7 @@ from pathlib import Path
 from github import Github
 from typing import List, Dict
 import itertools
+import requests
 
 HTML_TEMPLATE = """<!DOCTYPE html>
  <html>
