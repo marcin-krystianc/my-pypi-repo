@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 from pathlib import Path
 from github import Github
 from typing import List, Dict
@@ -19,10 +18,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
  </html>
 """
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 class PackageIndexBuilder:
     def __init__(self, token: str, repo_name: str, output_dir: str):
         self.github = Github(token)
@@ -39,7 +34,7 @@ class PackageIndexBuilder:
 
     def collect_packages(self):
 
-        logger.info("Collecting packages from releases...")
+        print ("Query release assets")
         repo = self.github.get_repo(self.repo_name)
 
         for release in repo.get_releases():
@@ -81,7 +76,7 @@ class PackageIndexBuilder:
 
                 # Download the file
                 with open(package_dir / filename, 'wb') as f:
-                    logger.info(f"Downloading '{filename}' from '{url}'")
+                    print (f"Downloading '{filename}' from '{url}'")
                     response = self.session.get(url, stream=True)
                     response.raise_for_status()
                     for chunk in response.iter_content(chunk_size=8192):
@@ -104,8 +99,6 @@ class PackageIndexBuilder:
         self.collect_packages()
         self.generate_index_html()
 
-        logger.info(f"Package index built successfully in {self.output_dir}")
-
 
 def main():
     # Get environment variables
@@ -115,7 +108,7 @@ def main():
     output_dir = os.environ.get("OUTPUT_DIR", "dist")
     
     if not all([token, repo]):
-        logger.error("Missing required environment variables")
+        print ("Missing required environment variables")
         sys.exit(1)
 
     builder = PackageIndexBuilder(token, repo, output_dir)
