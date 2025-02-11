@@ -40,7 +40,7 @@ class PackageIndexBuilder:
         for release in repo.get_releases():
             for asset in release.get_assets():
                 if asset.name.endswith(('.whl', '.tar.gz')):
-                    package_name = asset.name.split('-')[0]
+                    package_name = asset.name.split('-')[0].replace('_', '-')
                     if package_name not in self.packages:
                         self.packages[package_name] = []
 
